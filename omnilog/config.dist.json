@@ -1,0 +1,42 @@
+{
+  "webPanel": {
+    "active": true,
+    "dataOutput": "public/data_source",
+    "maxEntries": 10,
+    "frontEndConfig": {
+      "refreshIntervalSecs": 5
+    },
+    "webServer": {
+      "listenAddress": "127.0.0.1",
+      "listenPort": 8080,
+      "docRoot": "public"
+    }
+  },
+  "generalHandler": {
+    "logsPath": "logs"
+  },
+  "logs": [
+    {
+      "active": true,
+      "name": "Super log",
+      "systemNotifications": true,
+      "logWritePath": "/path/to/log.log",
+      "logReadPath": "/path/to/log.log",
+      "ignorePatterns": [],
+      "patterns": [
+        "asda123",
+        "^([a-z])+$"
+      ],
+      "ssh": {
+        "hostname": "hostname.com",
+        "port": 22,
+        "username": "user",
+        "password": "",
+        "privateKey": {
+          "path": "",
+          "passphrase": ""
+        }
+      }
+    }
+  ]
+}
