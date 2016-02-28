@@ -7,6 +7,12 @@ from omnilog.config import Config
 
 
 class ConfigWatcher(threading.Thread):
+    """
+    App submodule. This runnable has the responsibility of read the
+    json settings file, save hash information about it in memory and reload
+    it if hash differs at some point of program execution.
+
+    """
     runner = None
 
     def __init__(self, config_path, runner, vertical_queue):
@@ -20,11 +26,18 @@ class ConfigWatcher(threading.Thread):
 
     def set_config(self):
 
+        """
+        Sets the parsed config into app config in memory object.
+
+        """
         config_file = open(self.config_path)
         Config.config_dict = json.load(config_file)
 
     def run(self):
 
+        """
+        Endless loop execution.
+        """
         counter = 0
         print("Started config watcher ...")
 

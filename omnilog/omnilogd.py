@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # coding=utf-8
 
 import sys
@@ -12,7 +13,7 @@ from omnilog.cwatcher import ConfigWatcher
 from omnilog.web_panel import WebPanel
 
 
-class LogDaemon(object):
+class OmniLogD(object):
     """
     This is the main process. It setups config, signaling for threads and IPC.
     It starts all services needed to run this app, and is responsible of communication
@@ -38,6 +39,9 @@ class LogDaemon(object):
 
         """
         Create the IPC system
+        -vertical_queue is intended to comunicate subsystem -> main process.
+        -log_queue comunicates log parsers with the handler
+        -web_panel_queue passes log information from general handler to web panel subsystem.
         """
         self.vertical_queue = Queue()
         self.log_queue = Queue()
@@ -46,7 +50,7 @@ class LogDaemon(object):
     def create_events(self):
 
         """
-        It creates the events for signaling cancel shutdown to threads.
+        It creates the events for signaling start or shutdown in threads.
         """
         self.main_runner = threading.Event()
         self.web_panel_runner = threading.Event()
@@ -69,8 +73,7 @@ class LogDaemon(object):
     def run(self):
         """
         The Main function of all the proyect. Its a loop that instantiates all runnable services (threading) with review a
-        interval that listens for messages of low level processes (aka threads or app services). This messages
-        can be RESTART, SHUTDOWN ..
+        interval that listens for messages of low level processes (aka threads or app services).
         Its An intermediary between services.
         """
         try:
@@ -161,5 +164,5 @@ class LogDaemon(object):
 
 
 if __name__ == '__main__':
-    w = LogDaemon()
+    w = OmniLogD()
     w.run()

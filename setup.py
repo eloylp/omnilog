@@ -1,6 +1,25 @@
+# coding=utf-8
 from setuptools import setup
-
+from setuptools.command.test import test as TestCommand
 import omnilog
+import sys
+
+class PyTest(TestCommand):
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+    def run_tests(self):
+        import pytest
+        errcode = pytest.main(self.test_args)
+        sys.exit(errcode)
+
+
+with open("README.md") as r:
+    readme = r.read()
+with open("requirements.txt") as req:
+    reqs = req.readlines()
 
 setup(
     name="omnilog",
@@ -9,11 +28,14 @@ setup(
     url="https://github.com/sandboxwebs/omnilog",
     license="GPLV3",
     author="Eloy (sbw)",
-    install_requires=['paramiko', 'notify2'],
+    install_requires=reqs,
+    cmdclass={'test': PyTest},
+    tests_require=['pytest'],
     author_email="eloy@sandboxwebs.com",
     description="A daemon remote log watcher that uses ssh, and multithreaded design.",
+    long_description=readme,
     packages=["omnilog"],
     include_package_data=True,
     platforms="any",
-    scripts="omnilog.py"
+    scripts="omnilog/omnilogd.py"
 )

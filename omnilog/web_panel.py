@@ -5,6 +5,12 @@ from omnilog.server import HTTPServer
 
 
 class WebPanel(threading.Thread):
+    """
+    This runnable has the responsibility or maintain the webpanel updated.
+    It starts up the web server subsystem and forwards IPC signaling between the
+    main process and the webserver.
+    It consumes the web_panel_queue.
+    """
     runner = None
 
     def __init__(self, runner, config, web_panel_queue):

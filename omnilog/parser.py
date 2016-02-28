@@ -8,6 +8,13 @@ from omnilog import ssh_handler
 
 
 class LogParser(threading.Thread):
+    """
+    This subsystem may run for each log instance.
+    Its responsibility is to pull changes from paramiko channel,
+    split it into lines and check user defined regex over them.
+    After all , it queues the result (if valid) into the general
+    log handler queue.SS
+    """
     runner = None
 
     def __init__(self, log, runner, log_queue):
@@ -40,22 +47,33 @@ class LogParser(threading.Thread):
                 if len(valid_lines) > 0:
 
                     for line in valid_lines:
-
                         self.log_queue.put({"name": self.config['name'],
-                                           "data": line,
-                                           "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                           "systemNotifications": self.config['systemNotifications']})
+                                            "data": line,
+                                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "systemNotifications": self.config['systemNotifications']})
 
         ssh.close()
 
     def get_lines_from_data(self, data):
 
+        """
+        Transform data received from ssh channel to a list of lines.
+        :param data: bytes
+        :return: list
+        """
         string = data.decode("unicode_escape", "ignore")
         lines = string.split("\n")
         return lines
 
     def check_patterns(self, lines):
 
+        """
+        Validates log lines against user defined regex (only if defined).
+        Returns the result list.
+
+        :param lines: list
+        :return: list
+        """
         not_black_listed = []
         valid_lines = []
 

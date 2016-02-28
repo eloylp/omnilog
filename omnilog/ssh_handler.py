@@ -3,11 +3,21 @@ import paramiko
 
 
 class SSHhandler(object):
+    """
+    Our SSH wrapper class for paramiko. Its not only a wrapper class.
+    It has some responsibility , that is , return the proper ssh connection
+    object taking in count the config passed.
+    """
+
     def __init__(self, config):
         self.config = config
 
     def get_session(self):
 
+        """
+        Determines what auth method need to use.
+        :return: object connection
+        """
         if "password" in self.config.keys():
             ssh = self.connect_with_password()
         elif "privateKey" in self.config.keys():

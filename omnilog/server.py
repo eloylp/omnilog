@@ -3,6 +3,9 @@ import threading
 
 
 class RequestHandler(Server.SimpleHTTPRequestHandler):
+    """
+    Class to implement document root in simple.http server
+    """
     routes = None
 
     def translate_path(self, path):
@@ -15,6 +18,9 @@ class RequestHandler(Server.SimpleHTTPRequestHandler):
 
 
 class HTTPServer(threading.Thread):
+    """
+    Our HTTP server wrapper class.
+    """
     runner = None
 
     def __init__(self, config, runner):
@@ -27,9 +33,12 @@ class HTTPServer(threading.Thread):
         ]
 
     def run(self):
+        """
+        Runner for http server, uses user defined config for server.
+
+        """
         address = (self.config['listenAddress'], self.config['listenPort'])
         self.request_handler.routes = self.routes
         httpd = Server.HTTPServer(address, self.request_handler)
         while self.runner.is_set():
             httpd.handle_request()
-
