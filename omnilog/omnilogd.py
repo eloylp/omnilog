@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # coding=utf-8
 
 import sys
@@ -10,12 +10,12 @@ from omnilog.config import Config
 from omnilog.parser import LogParser
 from omnilog.handler import GeneralLogHandler
 from omnilog.cwatcher import ConfigWatcher
-from omnilog.web_panel import WebPanel
+from omnilog.wpanel import WebPanel
 
 
 class OmniLogD(object):
     """
-    This is the main process. It setups config, signaling for threads and IPC.
+    This is the main process. It setups config and IPC.
     It starts all services needed to run this app, and is responsible of communication
     between them.
     
@@ -142,9 +142,10 @@ class OmniLogD(object):
         job ending and then start it again.
         """
         print("Reset event triggered. Restarting app")
+        self.logs_runner.clear()
+        time.sleep(2)
         self.web_panel_runner.clear()
         self.gen_log_handler_runner.clear()
-        self.logs_runner.clear()
         time.sleep(2)
         self.web_panel_runner.set()
         self.gen_log_handler_runner.set()
@@ -157,9 +158,10 @@ class OmniLogD(object):
         review and exit.
         """
         print("Shutting down app")
+        self.logs_runner.clear()
+        time.sleep(2)
         self.web_panel_runner.clear()
         self.gen_log_handler_runner.clear()
-        self.logs_runner.clear()
         self.main_runner.clear()
 
 

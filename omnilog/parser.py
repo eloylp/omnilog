@@ -4,7 +4,7 @@ import select
 import threading
 import time
 
-from omnilog import ssh_handler
+from omnilog import sshh
 
 
 class LogParser(threading.Thread):
@@ -22,7 +22,7 @@ class LogParser(threading.Thread):
         self.runner = runner
         self.log_queue = log_queue
         self.config = log
-        self.ssh = ssh_handler.SSHhandler(self.config['ssh'])
+        self.ssh = sshh.SSHhandler(self.config['ssh'])
         self.interval_secs = 1
         self.recv_buffer = 1024
 
