@@ -76,15 +76,15 @@ class OmniLogD(object):
         interval that listens for messages of low level processes (aka threads or app services).
         Its An intermediary between services.
         """
-        try:
+        threads = list()
 
-            config_watcher = ConfigWatcher(self.config_path, self.config_runner, self.vertical_queue)
-            config_watcher.start()
-            time.sleep(2)
+        config_watcher = ConfigWatcher(self.config_path, self.config_runner, self.vertical_queue)
+        config_watcher.start()
+        threads.append(config_watcher)
+        time.sleep(2)
 
-            log_threads = list()
-
-            while self.main_runner.is_set():
+        while self.main_runner.is_set():
+            try:
 
                 time.sleep(self.review_interval)
 
@@ -93,11 +93,13 @@ class OmniLogD(object):
                     if self.gen_log_handler_runner.is_set():
                         gen_log_handler = GeneralLogHandler(Config.config_dict, self.log_queue,
                                                             self.gen_log_handler_runner, self.web_panel_queue)
+                        threads.append(gen_log_handler)
                         gen_log_handler.start()
 
                     if Config.config_dict['webPanel']['active'] and self.web_panel_runner.is_set():
                         web_panel = WebPanel(self.web_panel_runner, Config.config_dict['webPanel'],
                                              self.web_panel_queue)
+                        threads.append(web_panel)
                         web_panel.start()
 
                     if self.logs_runner.is_set():
@@ -108,19 +110,22 @@ class OmniLogD(object):
 
                             if l['active'] is True:
                                 t = LogParser(l, self.logs_runner, self.log_queue)
-                                log_threads.append(t)
+                                t.name = l['name']
+                                threads.append(t)
                                 t.start()
+
                                 print("Started log watcher for " + l['name'])
 
                         self.booting = False
 
                 elif not self.vertical_queue.empty():
-
                     self.manage_com()
 
-        except KeyboardInterrupt:
+            except KeyboardInterrupt:
 
-            self.vertical_queue.put("SHUTDOWN")
+                self.vertical_queue.put("SHUTDOWN")
+        for te in threads:
+            te.join()
 
     def manage_com(self):
 
@@ -129,7 +134,7 @@ class OmniLogD(object):
         This queue needs to be based on topics because the main process needs to understand from what service
         come each message.
         """
-        com = self.vertical_queue.get()
+        com = self.vertical_queue.get(True)
         if com == 'RESTART':
             self.restart()
         elif com == 'SHUTDOWN':
@@ -158,6 +163,7 @@ class OmniLogD(object):
         review and exit.
         """
         print("Shutting down app")
+        self.config_runner.clear()
         self.logs_runner.clear()
         time.sleep(2)
         self.web_panel_runner.clear()
