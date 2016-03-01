@@ -40,7 +40,7 @@ setup(
     description='A daemon remote log watcher that uses ssh, and multithreaded design.',
     long_description=readme,
     packages=['omnilog'],
-    #include_package_data=True,
+    # include_package_data=True,
     platforms='any',
     scripts=['omnilog/omnilogd.py']
 )

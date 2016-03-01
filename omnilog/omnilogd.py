@@ -11,6 +11,7 @@ from omnilog.parser import LogParser
 from omnilog.handler import GeneralLogHandler
 from omnilog.cwatcher import ConfigWatcher
 from omnilog.wpanel import WebPanel
+from omnilog.logger import Logger
 
 
 class OmniLogD(object):
@@ -21,6 +22,8 @@ class OmniLogD(object):
     
     """
 
+    name = "MainProcess"
+
     def __init__(self):
 
         if len(sys.argv) == 2:
@@ -28,6 +31,7 @@ class OmniLogD(object):
         else:
             self.config_path = "config.json"
 
+        self.logger = Logger()
         self.booting = True
         self.review_interval = 1
 
@@ -47,6 +51,8 @@ class OmniLogD(object):
         self.log_queue = Queue()
         self.web_panel_queue = Queue()
 
+        self.logger.info("IPC - Queues Created.")
+
     def create_events(self):
 
         """
@@ -57,6 +63,8 @@ class OmniLogD(object):
         self.config_runner = threading.Event()
         self.gen_log_handler_runner = threading.Event()
         self.logs_runner = threading.Event()
+
+        self.logger.info("IPC - Events Created.")
 
     def starter(self):
 
@@ -70,6 +78,8 @@ class OmniLogD(object):
         self.gen_log_handler_runner.set()
         self.logs_runner.set()
 
+        self.logger.info("IPC - Events started.")
+
     def run(self):
         """
         The Main function of all the proyect. Its a loop that instantiates all runnable services (threading) with review a
@@ -81,6 +91,7 @@ class OmniLogD(object):
         config_watcher = ConfigWatcher(self.config_path, self.config_runner, self.vertical_queue)
         config_watcher.start()
         threads.append(config_watcher)
+        self.logger.info("ConfigWatcher - started.")
         time.sleep(2)
 
         while self.main_runner.is_set():
@@ -90,19 +101,25 @@ class OmniLogD(object):
 
                 if self.vertical_queue.empty() and self.booting:
 
+                    self.logger.info(self.name + " - Starting subsystems ....")
+
                     if self.gen_log_handler_runner.is_set():
                         gen_log_handler = GeneralLogHandler(Config.config_dict, self.log_queue,
                                                             self.gen_log_handler_runner, self.web_panel_queue)
                         threads.append(gen_log_handler)
                         gen_log_handler.start()
+                        self.logger.info(self.name + " - Started subsystem LogHandler ....")
 
                     if Config.config_dict['webPanel']['active'] and self.web_panel_runner.is_set():
                         web_panel = WebPanel(self.web_panel_runner, Config.config_dict['webPanel'],
                                              self.web_panel_queue)
                         threads.append(web_panel)
                         web_panel.start()
+                        self.logger.info(self.name + " - Started subsystem LogHandler ....")
 
                     if self.logs_runner.is_set():
+
+                        self.logger.info(self.name + " - Starting logs watchers ....")
 
                         logs = Config.config_dict['logs']
 
@@ -110,11 +127,10 @@ class OmniLogD(object):
 
                             if l['active'] is True:
                                 t = LogParser(l, self.logs_runner, self.log_queue)
-                                t.name = l['name']
+                                t.name = "LogWatcher | " + l['name']
                                 threads.append(t)
                                 t.start()
-
-                                print("Started log watcher for " + l['name'])
+                                self.logger.info(self.name + " - Started log watcher for " + l['name'])
 
                         self.booting = False
 
@@ -134,7 +150,10 @@ class OmniLogD(object):
         This queue needs to be based on topics because the main process needs to understand from what service
         come each message.
         """
+
         com = self.vertical_queue.get(True)
+        self.logger.info(self.name + " - IPC - Received " + com)
+
         if com == 'RESTART':
             self.restart()
         elif com == 'SHUTDOWN':
@@ -146,7 +165,8 @@ class OmniLogD(object):
         The restart operation. It send the event to stop gracefully stop all threads, waits for
         job ending and then start it again.
         """
-        print("Reset event triggered. Restarting app")
+        self.logger.info(self.name + " - Restarting app")
+
         self.logs_runner.clear()
         time.sleep(2)
         self.web_panel_runner.clear()
@@ -162,7 +182,7 @@ class OmniLogD(object):
         The shutdown operation. Same procedure as restart, but this time the main loop will not do more
         review and exit.
         """
-        print("Shutting down app")
+        self.logger.info(self.name + " - Shutting down app")
         self.config_runner.clear()
         self.logs_runner.clear()
         time.sleep(2)

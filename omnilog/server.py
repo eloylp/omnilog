@@ -1,6 +1,8 @@
+# coding=utf-8
+
 import http.server as Server
 import threading
-
+from omnilog.logger import Logger
 
 class RequestHandler(Server.SimpleHTTPRequestHandler):
     """
@@ -9,18 +11,19 @@ class RequestHandler(Server.SimpleHTTPRequestHandler):
     routes = None
 
     def translate_path(self, path):
-        returnPath = False
+        return_path = False
         for patt, rootDir in self.routes:
             if path.startswith(patt):
-                returnPath = rootDir + path
+                return_path = rootDir + path
                 break
-        return returnPath
+        return return_path
 
 
 class HTTPServer(threading.Thread):
     """
     Our HTTP server wrapper class.
     """
+    name = "HTTPServer"
     runner = None
 
     def __init__(self, config, runner):
@@ -28,6 +31,7 @@ class HTTPServer(threading.Thread):
         self.config = config
         self.request_handler = RequestHandler
         self.runner = runner
+        self.logger = Logger()
         self.routes = [
             ("/", self.config['docRoot'])
         ]
@@ -37,8 +41,12 @@ class HTTPServer(threading.Thread):
         Runner for http server, uses user defined config for server.
 
         """
+        self.logger.info("SUB - " + self.name + " - Starting")
+
         address = (self.config['listenAddress'], self.config['listenPort'])
         self.request_handler.routes = self.routes
         httpd = Server.HTTPServer(address, self.request_handler)
         while self.runner.is_set():
             httpd.handle_request()
+            self.logger.info("SUB - " + self.name + " - handling request ...")
+

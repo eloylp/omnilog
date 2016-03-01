@@ -1,10 +1,13 @@
+# coding=utf-8
+
 import datetime
 import re
 import select
 import threading
 import time
 
-from omnilog import sshh
+from omnilog.sshh import SSHhandler
+from omnilog.logger import Logger
 
 
 class LogParser(threading.Thread):
@@ -15,6 +18,7 @@ class LogParser(threading.Thread):
     After all , it queues the result (if valid) into the general
     log handler queue.SS
     """
+    name = "LogParser"
     runner = None
 
     def __init__(self, log, runner, log_queue):
@@ -22,11 +26,14 @@ class LogParser(threading.Thread):
         self.runner = runner
         self.log_queue = log_queue
         self.config = log
-        self.ssh = sshh.SSHhandler(self.config['ssh'])
+        self.ssh = SSHhandler(self.config['ssh'])
+        self.logger = Logger()
         self.interval_secs = 1
         self.recv_buffer = 1024
 
     def run(self):
+
+        self.logger.info("SUB - " + self.name + " - Starting")
 
         ssh = self.ssh.get_session()
         transport = ssh.get_transport()
@@ -36,7 +43,9 @@ class LogParser(threading.Thread):
         channel.exec_command('tail -f ' + self.config['logReadPath'])
 
         while self.runner.is_set() and transport.is_active():
-            time.sleep(self.interval_secs)  # TODO REMOVE THIS ?? SELECT BLOCKS
+            time.sleep(self.interval_secs)
+            self.logger.info("SUB - " + self.name + " - pooling log info")
+
             rl, wl, xl = select.select([channel], [], [], 0.0)
             if len(rl) > 0:
                 data = channel.recv(self.recv_buffer)
@@ -47,6 +56,7 @@ class LogParser(threading.Thread):
                 if len(valid_lines) > 0:
 
                     for line in valid_lines:
+                        self.logger.info("SUB - " + self.name + " - Valid log reached, passing it to queue.")
                         self.log_queue.put({"name": self.config['name'],
                                             "data": line,
                                             "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
