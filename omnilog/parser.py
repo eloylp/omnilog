@@ -5,9 +5,12 @@ import re
 import select
 import threading
 import time
+from paramiko import SSHException
 
+from omnilog.comm import Comm
 from omnilog.sshh import SSHhandler
 from omnilog.logger import Logger
+
 
 
 class LogParser(threading.Thread):
@@ -18,10 +21,10 @@ class LogParser(threading.Thread):
     After all , it queues the result (if valid) into the general
     log handler queue.SS
     """
-    name = "LogParser"
+    name = "SUB-LogParser"
     runner = None
 
-    def __init__(self, log, runner, log_queue):
+    def __init__(self, log, runner, log_queue, vertical_queue):
         super().__init__()
         self.runner = runner
         self.log_queue = log_queue
@@ -30,39 +33,53 @@ class LogParser(threading.Thread):
         self.logger = Logger()
         self.interval_secs = 1
         self.recv_buffer = 1024
+        self.vertical_queue = vertical_queue
 
     def run(self):
 
-        self.logger.info("SUB - " + self.name + " - Starting")
+        try:
 
-        ssh = self.ssh.get_session()
-        transport = ssh.get_transport()
-        transport.set_keepalive(5)
-        channel = transport.open_session()
+            self.logger.info("SUB - " + self.name + " - Starting")
 
-        channel.exec_command('tail -f ' + self.config['logReadPath'])
+            ssh = self.ssh.get_session()
+            transport = ssh.get_transport()
+            transport.set_keepalive(5)
+            channel = transport.open_session()
 
-        while self.runner.is_set() and transport.is_active():
-            time.sleep(self.interval_secs)
-            self.logger.info("SUB - " + self.name + " - pooling log info")
+            channel.exec_command('tail -f ' + self.config['logReadPath'])
 
-            rl, wl, xl = select.select([channel], [], [], 0.0)
-            if len(rl) > 0:
-                data = channel.recv(self.recv_buffer)
+            while self.runner.is_set() and transport.is_active():
+                time.sleep(self.interval_secs)
+                self.logger.info("SUB - " + self.name + " - pooling log info")
 
-                lines = self.get_lines_from_data(data)
-                valid_lines = self.check_patterns(lines)
+                rl, wl, xl = select.select([channel], [], [], 0.0)
+                if len(rl) > 0:
+                    data = channel.recv(self.recv_buffer)
 
-                if len(valid_lines) > 0:
+                    lines = self.get_lines_from_data(data)
+                    valid_lines = self.check_patterns(lines)
 
-                    for line in valid_lines:
-                        self.logger.info("SUB - " + self.name + " - Valid log reached, passing it to queue.")
-                        self.log_queue.put({"name": self.config['name'],
-                                            "data": line,
-                                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                            "systemNotifications": self.config['systemNotifications']})
+                    if len(valid_lines) > 0:
 
-        ssh.close()
+                        for line in valid_lines:
+                            self.logger.info("SUB - " + self.name + " - Valid log reached, passing it to queue.")
+                            self.log_queue.put({"name": self.config['name'],
+                                                "data": line,
+                                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                "systemNotifications": self.config['systemNotifications']})
+
+            ssh.close()
+
+        except KeyError:
+
+            ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error , check config.")
+            self.vertical_queue.put(ipc_msg)
+
+        except SSHException:
+
+            ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "SSH error , check config.")
+            self.vertical_queue.put(ipc_msg)
+
 
     def get_lines_from_data(self, data):
 

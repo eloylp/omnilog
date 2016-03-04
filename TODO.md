@@ -1,6 +1,4 @@
-Exitprocess (add logging),
 Tests,
-exceptions,
 check windows compatiblity,
-launch command line daemon,
-pypi
+pypi,
+maybe more eception control.

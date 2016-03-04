@@ -6,6 +6,7 @@ import threading
 import time
 from queue import Queue
 
+from omnilog.comm import Comm
 from omnilog.config import Config
 from omnilog.parser import LogParser
 from omnilog.handler import GeneralLogHandler
@@ -105,14 +106,14 @@ class OmniLogD(object):
 
                     if self.gen_log_handler_runner.is_set():
                         gen_log_handler = GeneralLogHandler(Config.config_dict, self.log_queue,
-                                                            self.gen_log_handler_runner, self.web_panel_queue)
+                                                            self.gen_log_handler_runner, self.web_panel_queue, self.vertical_queue)
                         threads.append(gen_log_handler)
                         gen_log_handler.start()
                         self.logger.info(self.name + " - Started subsystem LogHandler ....")
 
                     if Config.config_dict['webPanel']['active'] and self.web_panel_runner.is_set():
                         web_panel = WebPanel(self.web_panel_runner, Config.config_dict['webPanel'],
-                                             self.web_panel_queue)
+                                             self.web_panel_queue, self.vertical_queue)
                         threads.append(web_panel)
                         web_panel.start()
                         self.logger.info(self.name + " - Started subsystem LogHandler ....")
@@ -126,7 +127,7 @@ class OmniLogD(object):
                         for l in logs:
 
                             if l['active'] is True:
-                                t = LogParser(l, self.logs_runner, self.log_queue)
+                                t = LogParser(l, self.logs_runner, self.log_queue, self.vertical_queue)
                                 t.name = "LogWatcher | " + l['name']
                                 threads.append(t)
                                 t.start()
@@ -139,7 +140,19 @@ class OmniLogD(object):
 
             except KeyboardInterrupt:
 
-                self.vertical_queue.put("SHUTDOWN")
+                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "keyboard interruption detected.")
+                self.vertical_queue.put(ipc_msg)
+
+            except KeyError:
+                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error detected.")
+                self.vertical_queue.put(ipc_msg)
+
+            except:
+
+                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "UNHANDLED EXCEPTION .... shuting down....")
+                self.logger.emergency(self.name + " - UNHANDLED EXCEPTION .... shuting down....")
+                self.vertical_queue.put(ipc_msg)
+
         for te in threads:
             te.join()
 
@@ -152,11 +165,11 @@ class OmniLogD(object):
         """
 
         com = self.vertical_queue.get(True)
-        self.logger.info(self.name + " - IPC - Received " + com)
+        self.logger.info(self.name + " - IPC - Received " + str(com))
 
-        if com == 'RESTART':
+        if com.action == Comm.ACTION_REBOOT:
             self.restart()
-        elif com == 'SHUTDOWN':
+        elif com.action == Comm.ACTION_SHUTDOWN:
             self.shutdown()
 
     def restart(self):

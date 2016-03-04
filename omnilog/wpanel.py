@@ -6,6 +6,7 @@ import threading
 
 import time
 
+from omnilog.comm import Comm
 from omnilog.server import HTTPServer
 from omnilog.logger import Logger
 
@@ -17,10 +18,10 @@ class WebPanel(threading.Thread):
     main process and the webserver.
     It consumes the web_panel_queue.
     """
-    name = "WebPanel"
+    name = "SUB-WebPanel"
     runner = None
 
-    def __init__(self, runner, config, web_panel_queue):
+    def __init__(self, runner, config, web_panel_queue, vertical_queue):
         super().__init__()
         self.runner = runner
         self.logger = Logger()
@@ -28,11 +29,12 @@ class WebPanel(threading.Thread):
         self.queue = web_panel_queue
         self.HTTP_server = HTTPServer
         self.data = {"config": self.config['frontEndConfig'], "logs": []}
+        self.vertical_queue = vertical_queue
 
     def run(self):
 
         self.logger.info("SUB - " + self.name + " - Starting")
-        web_server = self.HTTP_server(self.config['webServer'], self.runner)
+        web_server = self.HTTP_server(self.config['webServer'], self.runner, self.vertical_queue)
         web_server.start()
 
         while self.runner.is_set():
@@ -48,3 +50,7 @@ class WebPanel(threading.Thread):
                     json.dump(self.data, f, indent=4)
             except queue.Empty:
                 time.sleep(1)
+            except KeyError:
+                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error , check config.")
+                self.vertical_queue.put(ipc_msg)
+

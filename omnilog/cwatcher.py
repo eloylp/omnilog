@@ -5,6 +5,7 @@ import json
 import threading
 import time
 
+from omnilog.comm import Comm
 from omnilog.config import Config
 from omnilog.logger import Logger
 
@@ -17,7 +18,7 @@ class ConfigWatcher(threading.Thread):
 
     """
     runner = None
-    name = "ConfigWatcher"
+    name = "SUB-ConfigWatcher"
 
     def __init__(self, config_path, runner, vertical_queue):
         super().__init__()
@@ -44,17 +45,24 @@ class ConfigWatcher(threading.Thread):
         Endless loop execution.
         """
         counter = 0
-        self.logger.info("SUB - " + self.name + " - Starting ")
+        self.logger.info(self.name + " - Starting ")
 
         while self.runner.is_set():
 
-            time.sleep(self.interval_secs)
-            self.logger.info("SUB - " + self.name + " - Init config review ...")
-            hash = hashlib.md5(open(self.config_path, 'rb').read()).hexdigest()
-            if hash != self.last_config_checksum:
-                self.set_config()
-                self.last_config_checksum = hash
-                if counter != 0:
-                    self.vertical_queue.put("RESTART")
-                    self.logger.info("SUB - " + self.name + " - Config changes detected ... setting new config.")
-            counter += 1
+            try:
+
+                time.sleep(self.interval_secs)
+                self.logger.info(self.name + " - Init config review ...")
+                hash = hashlib.md5(open(self.config_path, 'rb').read()).hexdigest()
+                if hash != self.last_config_checksum:
+                    self.set_config()
+                    self.last_config_checksum = hash
+                    if counter != 0:
+                        ipc_msg = Comm(self.name, Comm.ACTION_REBOOT, "Config changes detected ... setting new config.")
+                        self.vertical_queue.put(ipc_msg)
+                counter += 1
+            except IOError:
+
+                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Cannot load config.")
+                self.vertical_queue.put(ipc_msg)
+

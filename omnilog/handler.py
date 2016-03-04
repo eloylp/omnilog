@@ -4,6 +4,7 @@ import threading
 
 import time
 
+from omnilog.comm import Comm
 from omnilog.notifier import Notifier
 from omnilog.logger import Logger
 
@@ -13,9 +14,9 @@ class GeneralLogHandler(threading.Thread):
     This subsystem receives all log messages that need to be saved or notified.
     Its the consumer of the logs queue and the producer of the webpanel queue.
     """
-    name = "GenLogHandler"
+    name = "SUB-GenLogHandler"
 
-    def __init__(self, config, log_queue, runner, web_panel_queue):
+    def __init__(self, config, log_queue, runner, web_panel_queue, vertical_queue):
         super().__init__()
         self.runner = runner
         self.log_queue = log_queue
@@ -24,12 +25,13 @@ class GeneralLogHandler(threading.Thread):
         self.notifier = Notifier()
         self.config = config['generalHandler']
         self.web_panel_active = config['webPanel']['active']
+        self.vertical_queue = vertical_queue
 
     def run(self):
         """
         Consumer from log queue and taking action for each log settings.
         """
-        self.logger.info("SUB - " + self.name + " - Starting")
+        self.logger.info(self.name + " - Starting")
 
         while self.runner.is_set():
 
@@ -42,9 +44,15 @@ class GeneralLogHandler(threading.Thread):
                 if self.web_panel_active:
                     self.send_to_webpanel(log)
                 self.finish_handling()
-                self.logger.info("SUB - " + self.name + " - Log procesed.")
+                self.logger.info(self.name + " - Log procesed.")
             except queue.Empty:
                 time.sleep(1)
+            except KeyError:
+                comm = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error detected.Shutting down.")
+                self.vertical_queue.put(comm)
+            except IOError:
+                comm = Comm(self.name, Comm.ACTION_SHUTDOWN, "IO error detected.Shutting down.")
+                self.vertical_queue.put(comm)
 
     def send_to_webpanel(self, log_data):
 
