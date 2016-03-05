@@ -68,12 +68,12 @@ class OmniLogD(object):
         self.gen_log_handler_runner.set()
         self.logs_runner.set()
 
-        #signal.signal(signal.SIGTERM, self.shutdown)
-        #signal.signal(signal.SIGINT, self.shutdown)
+        signal.signal(signal.SIGTERM, self.shutdown)
+        signal.signal(signal.SIGINT, self.shutdown)
 
     def run(self):
         """
-        The Main function of all the proyect. Its a loop that instantiates all runnable services (threading) with review a
+        The Main function of this program. Its a loop that instantiates all runnable services (threading) with review a
         interval that listens for messages of low level processes (aka threads or app services).
         Its An intermediary between services.
         """
@@ -134,7 +134,7 @@ class OmniLogD(object):
             except:
 
                 ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.UNHANDLED_EXCEPTION)
-                self.logger.emergency(self.name + Strings.UNHANDLED_EXCEPTION)
+                self.logger.emergency(self.name + " " + Strings.UNHANDLED_EXCEPTION)
                 self.vertical_queue.put(ipc_msg)
 
         for te in threads:

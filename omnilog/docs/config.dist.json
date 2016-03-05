@@ -2,7 +2,7 @@
   "webPanel": {
     "active": true,
     "dataOutput": "public/data_source",
-    "maxEntries": 10,
+    "maxEntries": 50,
     "frontEndConfig": {
       "refreshIntervalSecs": 5
     },
