@@ -2,11 +2,14 @@
 # coding=utf-8
 
 import sys
+import signal
 import threading
 import time
 from queue import Queue
 
-from omnilog.comm import Comm
+from omnilog.strings import Strings
+from omnilog.ipcactions import IPCActions
+from omnilog.ipcmessage import IPCMessage
 from omnilog.config import Config
 from omnilog.parser import LogParser
 from omnilog.handler import GeneralLogHandler
@@ -36,12 +39,6 @@ class OmniLogD(object):
         self.booting = True
         self.review_interval = 1
 
-        self.create_events()
-        self.create_ipcs()
-        self.starter()
-
-    def create_ipcs(self):
-
         """
         Create the IPC system
         -vertical_queue is intended to comunicate subsystem -> main process.
@@ -52,10 +49,6 @@ class OmniLogD(object):
         self.log_queue = Queue()
         self.web_panel_queue = Queue()
 
-        self.logger.info("IPC - Queues Created.")
-
-    def create_events(self):
-
         """
         It creates the events for signaling start or shutdown in threads.
         """
@@ -64,10 +57,6 @@ class OmniLogD(object):
         self.config_runner = threading.Event()
         self.gen_log_handler_runner = threading.Event()
         self.logs_runner = threading.Event()
-
-        self.logger.info("IPC - Events Created.")
-
-    def starter(self):
 
         """
         Sets by default all events (app services or threads) on.
@@ -79,7 +68,8 @@ class OmniLogD(object):
         self.gen_log_handler_runner.set()
         self.logs_runner.set()
 
-        self.logger.info("IPC - Events started.")
+        #signal.signal(signal.SIGTERM, self.shutdown)
+        #signal.signal(signal.SIGINT, self.shutdown)
 
     def run(self):
         """
@@ -92,7 +82,6 @@ class OmniLogD(object):
         config_watcher = ConfigWatcher(self.config_path, self.config_runner, self.vertical_queue)
         config_watcher.start()
         threads.append(config_watcher)
-        self.logger.info("ConfigWatcher - started.")
         time.sleep(2)
 
         while self.main_runner.is_set():
@@ -102,25 +91,20 @@ class OmniLogD(object):
 
                 if self.vertical_queue.empty() and self.booting:
 
-                    self.logger.info(self.name + " - Starting subsystems ....")
-
                     if self.gen_log_handler_runner.is_set():
                         gen_log_handler = GeneralLogHandler(Config.config_dict, self.log_queue,
-                                                            self.gen_log_handler_runner, self.web_panel_queue, self.vertical_queue)
+                                                            self.gen_log_handler_runner, self.web_panel_queue,
+                                                            self.vertical_queue)
                         threads.append(gen_log_handler)
                         gen_log_handler.start()
-                        self.logger.info(self.name + " - Started subsystem LogHandler ....")
 
                     if Config.config_dict['webPanel']['active'] and self.web_panel_runner.is_set():
                         web_panel = WebPanel(self.web_panel_runner, Config.config_dict['webPanel'],
                                              self.web_panel_queue, self.vertical_queue)
                         threads.append(web_panel)
                         web_panel.start()
-                        self.logger.info(self.name + " - Started subsystem LogHandler ....")
 
                     if self.logs_runner.is_set():
-
-                        self.logger.info(self.name + " - Starting logs watchers ....")
 
                         logs = Config.config_dict['logs']
 
@@ -128,7 +112,7 @@ class OmniLogD(object):
 
                             if l['active'] is True:
                                 t = LogParser(l, self.logs_runner, self.log_queue, self.vertical_queue)
-                                t.name = "LogWatcher | " + l['name']
+                                t.name = l['name']
                                 threads.append(t)
                                 t.start()
                                 self.logger.info(self.name + " - Started log watcher for " + l['name'])
@@ -140,17 +124,17 @@ class OmniLogD(object):
 
             except KeyboardInterrupt:
 
-                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "keyboard interruption detected.")
+                ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.KEYBOARD_INTERRUPTION)
                 self.vertical_queue.put(ipc_msg)
 
             except KeyError:
-                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error detected.")
+                ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_ERROR)
                 self.vertical_queue.put(ipc_msg)
 
             except:
 
-                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "UNHANDLED EXCEPTION .... shuting down....")
-                self.logger.emergency(self.name + " - UNHANDLED EXCEPTION .... shuting down....")
+                ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.UNHANDLED_EXCEPTION)
+                self.logger.emergency(self.name + Strings.UNHANDLED_EXCEPTION)
                 self.vertical_queue.put(ipc_msg)
 
         for te in threads:
@@ -165,11 +149,11 @@ class OmniLogD(object):
         """
 
         com = self.vertical_queue.get(True)
-        self.logger.info(self.name + " - IPC - Received " + str(com))
+        self.logger.info(self.name + Strings.IPC_RECEIVED + str(com))
 
-        if com.action == Comm.ACTION_REBOOT:
+        if com.action == IPCActions.ACTION_REBOOT:
             self.restart()
-        elif com.action == Comm.ACTION_SHUTDOWN:
+        elif com.action == IPCActions.ACTION_SHUTDOWN:
             self.shutdown()
 
     def restart(self):
@@ -178,7 +162,7 @@ class OmniLogD(object):
         The restart operation. It send the event to stop gracefully stop all threads, waits for
         job ending and then start it again.
         """
-        self.logger.info(self.name + " - Restarting app")
+        self.logger.info(self.name + Strings.APP_RESTARTING)
 
         self.logs_runner.clear()
         time.sleep(2)
@@ -195,7 +179,7 @@ class OmniLogD(object):
         The shutdown operation. Same procedure as restart, but this time the main loop will not do more
         review and exit.
         """
-        self.logger.info(self.name + " - Shutting down app")
+        self.logger.info(self.name + Strings.APP_SHUTDOWN)
         self.config_runner.clear()
         self.logs_runner.clear()
         time.sleep(2)

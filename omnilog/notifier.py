@@ -1,5 +1,7 @@
 import notify2
 
+from omnilog.strings import Strings
+
 
 class Notifier(object):
     """
@@ -7,7 +9,7 @@ class Notifier(object):
     """
 
     def __init__(self):
-        self.appName = "omnilog"
+        self.appName = Strings.APP_NAME
         notify2.init(self.appName)
 
     def send_notify(self, title, body):

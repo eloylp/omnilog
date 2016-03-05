@@ -4,7 +4,9 @@ import threading
 
 import time
 
-from omnilog.comm import Comm
+from omnilog.strings import Strings
+from omnilog.ipcactions import IPCActions
+from omnilog.ipcmessage import IPCMessage
 from omnilog.notifier import Notifier
 from omnilog.logger import Logger
 
@@ -31,69 +33,69 @@ class GeneralLogHandler(threading.Thread):
         """
         Consumer from log queue and taking action for each log settings.
         """
-        self.logger.info(self.name + " - Starting")
+        self.logger.info(self.name + " " + Strings.SUB_SYSTEM_START)
 
         while self.runner.is_set():
 
             try:
-                log = self.log_queue.get(False)
-                logPath = self.calc_log_path(log)
-                self.write_log(log, logPath)
-                if log['systemNotifications']:
-                    self.notify_sys(log)
+                log_message = self.log_queue.get(False)
+                log_path = self.calc_log_path(log_message)
+                self.write_log(log_message, log_path)
+                if log_message.system_notifications:
+                    self.notify_sys(log_message)
                 if self.web_panel_active:
-                    self.send_to_webpanel(log)
+                    self.send_to_webpanel(log_message)
                 self.finish_handling()
-                self.logger.info(self.name + " - Log procesed.")
+                self.logger.info(self.name + " " + Strings.LOG_PROCESSED)
+
             except queue.Empty:
                 time.sleep(1)
+
             except KeyError:
-                comm = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error detected.Shutting down.")
-                self.vertical_queue.put(comm)
-            except IOError:
-                comm = Comm(self.name, Comm.ACTION_SHUTDOWN, "IO error detected.Shutting down.")
+                comm = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_ERROR)
                 self.vertical_queue.put(comm)
 
-    def send_to_webpanel(self, log_data):
+            except IOError:
+                comm = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.IO_ERROR)
+                self.vertical_queue.put(comm)
+
+    def send_to_webpanel(self, log_message):
 
         """
         Send log info to the webpanel subsystem.
-        :param log_data: JSON object
+        :param log_message: JSON object
         """
-        self.web_panel_queue.put(log_data)
+        self.web_panel_queue.put(log_message)
 
-    def calc_log_path(self, log_data):
+    def calc_log_path(self, log_message):
 
         """
         Calculates the name for the log file.
-        :param log_data:
-        :return: string
-        """
-        if "logWritePath" in log_data.keys():
-            log_write_path = log_data['logWritePath']
-        else:
-            log_file_name = log_data['name'].replace("\n", "").replace(" ", "_") + ".log".lower()
-            log_write_path = self.config['logsPath'] + "/" + log_file_name
+        :param log_message:
+        :return: string        """
+
+        log_file_name = log_message.name.replace("\n", "").replace(" ", "_") + ".log".lower()
+        log_write_path = self.config['logsPath'] + "/" + log_file_name
 
         return log_write_path
 
-    def write_log(self, log_data, path):
+    def write_log(self, log_message, path):
 
         """
         Writes log in specifiec path.
-        :param log_data:
+        :param log_message:
         :param path:
         """
         with open(path, "a") as log_file:
-            log_file.write(log_data['data'] + "\n")
+            log_file.write(log_message.data + "\n")
 
-    def notify_sys(self, log_data):
+    def notify_sys(self, log_message):
 
         """
         Send info to the notifications subsystem
-        :param log_data:
+        :param log_message:
         """
-        self.notifier.send_notify(log_data['name'], log_data['data'])
+        self.notifier.send_notify(log_message.name, log_message.data)
 
     def finish_handling(self):
 

@@ -20,7 +20,6 @@
       "active": true,
       "name": "Super log",
       "systemNotifications": true,
-      "logWritePath": "/path/to/log.log",
       "logReadPath": "/path/to/log.log",
       "ignorePatterns": [],
       "patterns": [

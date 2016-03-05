@@ -5,7 +5,9 @@ import json
 import threading
 import time
 
-from omnilog.comm import Comm
+from omnilog.strings import Strings
+from omnilog.ipcactions import IPCActions
+from omnilog.ipcmessage import IPCMessage
 from omnilog.config import Config
 from omnilog.logger import Logger
 
@@ -45,24 +47,23 @@ class ConfigWatcher(threading.Thread):
         Endless loop execution.
         """
         counter = 0
-        self.logger.info(self.name + " - Starting ")
+        self.logger.info(self.name + " " + Strings.SUB_SYSTEM_START)
 
         while self.runner.is_set():
 
             try:
 
                 time.sleep(self.interval_secs)
-                self.logger.info(self.name + " - Init config review ...")
                 hash = hashlib.md5(open(self.config_path, 'rb').read()).hexdigest()
                 if hash != self.last_config_checksum:
                     self.set_config()
                     self.last_config_checksum = hash
                     if counter != 0:
-                        ipc_msg = Comm(self.name, Comm.ACTION_REBOOT, "Config changes detected ... setting new config.")
+                        ipc_msg = IPCMessage(self.name, IPCActions.ACTION_REBOOT, Strings.CONFIG_CHANGES)
                         self.vertical_queue.put(ipc_msg)
                 counter += 1
             except IOError:
 
-                ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Cannot load config.")
+                ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_FILE_ERROR)
                 self.vertical_queue.put(ipc_msg)
 

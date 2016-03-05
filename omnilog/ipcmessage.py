@@ -1,13 +1,11 @@
 # coding=utf-8
 
 
-class Comm(object):
+class IPCMessage(object):
     """
     Comunication object between subsystems and main process.
 
     """
-    ACTION_SHUTDOWN = "SHUTDOWN"
-    ACTION_REBOOT = "REBOOT"
 
     def __init__(self, subsystem, action, message):
         self._subsystem = subsystem
@@ -20,7 +18,6 @@ class Comm(object):
 
     @subsystem.setter
     def subsystem(self, subsystem):
-
         self._subsystem = subsystem
 
     @property
@@ -40,13 +37,9 @@ class Comm(object):
         self._message = message
 
     def __str__(self):
-        obj = {
-            "subsystem": self._subsystem,
-            "action": self._action,
-            "message": self._message
-        }
-        log_message = ''
-        for k, v in obj.items():
-            log_message += k + "-" + v + " | "
+        lm = []
+        str = "{key} - {value}"
+        for k, v in self.__dict__.items():
+            lm.append(str.format(key=k, value=v))
 
-        return log_message.rstrip(" | ")
+        return ' | '.join(lm)

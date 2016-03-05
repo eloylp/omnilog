@@ -2,8 +2,12 @@
 
 import http.server as Server
 import threading
-from omnilog.comm import Comm
+
+from omnilog.strings import Strings
+from omnilog.ipcactions import IPCActions
+from omnilog.ipcmessage import IPCMessage
 from omnilog.logger import Logger
+
 
 class RequestHandler(Server.SimpleHTTPRequestHandler):
     """
@@ -44,15 +48,13 @@ class HTTPServer(threading.Thread):
 
         """
         try:
-            self.logger.info("SUB - " + self.name + " - Starting")
+            self.logger.info(self.name + " " + Strings.SUB_SYSTEM_START)
 
             address = (self.config['listenAddress'], self.config['listenPort'])
             self.request_handler.routes = self.routes
             httpd = Server.HTTPServer(address, self.request_handler)
             while self.runner.is_set():
                 httpd.handle_request()
-                self.logger.info("SUB - " + self.name + " - handling request ...")
         except KeyError:
-            comm = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error detected.Shutting down.")
+            comm = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_ERROR)
             self.vertical_queue.put(comm)
-

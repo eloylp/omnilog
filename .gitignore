@@ -1,8 +1,8 @@
 
 .idea
 omnilog/config.json
-omnilog/logs
-omnilog/public/data_source/logs.json
+omnilog/logs/*
+omnilog/public/data_source/*
 
 # Compiled python modules.
 *.pyc

@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+from omnilog.strings import Strings
 
 
 class Logger(object):
@@ -10,7 +11,7 @@ class Logger(object):
 
     def __init__(self):
         logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger("Omnilog")
+        self.logger = logging.getLogger(Strings.APP_NAME)
         self.logger.setLevel(logging.INFO)
 
     def info(self, message):

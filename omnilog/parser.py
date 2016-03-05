@@ -7,10 +7,12 @@ import threading
 import time
 from paramiko import SSHException
 
-from omnilog.comm import Comm
+from omnilog.strings import Strings
+from omnilog.ipcactions import IPCActions
+from omnilog.ipcmessage import IPCMessage
+from omnilog.logmessage import LogMessage
 from omnilog.sshh import SSHhandler
 from omnilog.logger import Logger
-
 
 
 class LogParser(threading.Thread):
@@ -39,7 +41,7 @@ class LogParser(threading.Thread):
 
         try:
 
-            self.logger.info("SUB - " + self.name + " - Starting")
+            self.logger.info(self.name + " " + Strings.SUB_SYSTEM_START)
 
             ssh = self.ssh.get_session()
             transport = ssh.get_transport()
@@ -50,7 +52,6 @@ class LogParser(threading.Thread):
 
             while self.runner.is_set() and transport.is_active():
                 time.sleep(self.interval_secs)
-                self.logger.info("SUB - " + self.name + " - pooling log info")
 
                 rl, wl, xl = select.select([channel], [], [], 0.0)
                 if len(rl) > 0:
@@ -62,24 +63,26 @@ class LogParser(threading.Thread):
                     if len(valid_lines) > 0:
 
                         for line in valid_lines:
-                            self.logger.info("SUB - " + self.name + " - Valid log reached, passing it to queue.")
-                            self.log_queue.put({"name": self.config['name'],
-                                                "data": line,
-                                                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                                "systemNotifications": self.config['systemNotifications']})
+                            self.logger.info(self.name + " " + Strings.PARSER_VALID_LOG_REACHED)
+                            self.log_queue.put(
+                                LogMessage(
+                                    self.config['name'],
+                                    line,
+                                    self.config['systemNotifications'],
+                                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                ))
 
             ssh.close()
 
         except KeyError:
 
-            ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "Config error , check config.")
+            ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_ERROR)
             self.vertical_queue.put(ipc_msg)
 
         except SSHException:
 
-            ipc_msg = Comm(self.name, Comm.ACTION_SHUTDOWN, "SSH error , check config.")
+            ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.SSH_ERROR)
             self.vertical_queue.put(ipc_msg)
-
 
     def get_lines_from_data(self, data):
 
