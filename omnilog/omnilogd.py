@@ -1,10 +1,14 @@
 #! /usr/bin/env python3
 # coding=utf-8
-
+import os
 import sys
 import signal
 import threading
 import time
+import collections
+
+from urllib import request
+from urllib.error import URLError
 from queue import Queue
 
 from omnilog.strings import Strings
@@ -31,7 +35,12 @@ class OmniLogD(object):
     def __init__(self):
 
         if len(sys.argv) == 2:
-            self.config_path = sys.argv[1]
+
+            if sys.argv[1] == 'skeleton':
+                self.skeleton()
+            else:
+                self.config_path = sys.argv[1]
+
         else:
             self.config_path = "config.json"
 
@@ -41,8 +50,8 @@ class OmniLogD(object):
 
         """
         Create the IPC system
-        -vertical_queue is intended to comunicate subsystem -> main process.
-        -log_queue comunicates log parsers with the handler
+        -vertical_queue is intended to communicate subsystem -> main process.
+        -log_queue communicates log parsers with the handler
         -web_panel_queue passes log information from general handler to web panel subsystem.
         """
         self.vertical_queue = Queue()
@@ -70,6 +79,37 @@ class OmniLogD(object):
 
         signal.signal(signal.SIGTERM, self.shutdown)
         signal.signal(signal.SIGINT, self.shutdown)
+
+    def skeleton(self):
+
+        try:
+
+            home = os.path.expanduser("~")
+            github_front_url = "https://raw.githubusercontent.com/sandboxwebs/omnilog/master/omnilog/public/index.html"
+            github_config_url = "https://raw.githubusercontent.com/sandboxwebs/omnilog/master/omnilog/docs/config.dist.json"
+            config_example = request.urlopen(github_config_url).read().decode("utf8")
+            front_html = request.urlopen(github_front_url).read().decode("utf8")
+
+            dirs = collections.OrderedDict()
+            dirs['omnilog_root'] = os.path.join(home, 'omnilog')
+            dirs['logs'] = os.path.join(home, 'omnilog', 'logs')
+            dirs['http'] = os.path.join(home, 'omnilog', 'public')
+            dirs['http_data_source'] = os.path.join(home, 'omnilog', 'public', 'data_source')
+
+            for k, v in dirs.items():
+                os.makedirs(v)
+                if k == "http":
+                    with open(os.path.join(dirs['http'], "index.html"), "w") as f:
+                        f.write(front_html)
+                if k == "omnilog_root":
+                    with open(os.path.join(dirs['omnilog_root'], "config.json"), "w") as f:
+                        f.write(config_example)
+
+            exit(Strings.SKELETON_DIR_CREATED)
+        except FileExistsError:
+            exit(Strings.SKELETON_DIR)
+        except URLError:
+            exit(Strings.SKELETON_URL_ERROR)
 
     def run(self):
         """
@@ -127,7 +167,7 @@ class OmniLogD(object):
                 ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.KEYBOARD_INTERRUPTION)
                 self.vertical_queue.put(ipc_msg)
 
-            except KeyError:
+            except KeyError or AttributeError:
                 ipc_msg = IPCMessage(self.name, IPCActions.ACTION_SHUTDOWN, Strings.CONFIG_ERROR)
                 self.vertical_queue.put(ipc_msg)
 

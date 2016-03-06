@@ -21,13 +21,13 @@ class PyTest(TestCommand):
         errcode = pytest.main(self.test_args)
         sys.exit(errcode)
 
+
 with open(here + '/README.md') as r:
     readme_html = r.read()
     readme_plain = re.sub(r"<([0-9a-zA-Z/]*)>", "", readme_html)
 
 with open(here + '/requirements.txt') as req:
     reqs = req.read().splitlines()
-
 
 setup(
     name='omnilog',
@@ -43,7 +43,19 @@ setup(
     description='A remote log watcher daemon that uses ssh, and multithreaded design.',
     long_description=readme_plain,
     packages=['omnilog'],
-    # include_package_data=True,
+    classifiers=[
+        'Programming Language :: Python :: 3 :: Only',
+        'Development Status :: 4 - Beta',
+        'Natural Language :: English',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'License :: Freely Distributable',
+        'Operating System :: POSIX :: Linux',
+        'Topic :: System :: Logging',
+        'Topic :: System :: Monitoring'
+    ],
+    include_package_data=True,
     platforms='any',
     scripts=['omnilog/omnilogd.py']
 )

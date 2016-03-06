@@ -16,4 +16,9 @@ class Strings(object):
     IPC_RECEIVED = " - IPC - Received "
     PARSER_VALID_LOG_REACHED = "Valid log reached, passing it to queue."
     WEBPANEL_PUBLISH = "Valid log reached, passing it to queue."
+    SKELETON_DIR_CREATED = "Skeleton created in your home dir ... shutting down ..."
+    SKELETON_DIR = "Skeleton exists, aborting ..."
+    SKELETON_URL_ERROR = "Cannot contact external resources for skeleton ... go github."
+
+
 

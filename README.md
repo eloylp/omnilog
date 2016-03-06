@@ -36,6 +36,13 @@ The other components are wrappers around third party libraries .
 From pypi install as:
 pip3 install omnilog
 </p>
+<p>
+You can create a skeleton , omnilog will write in your $HOME dir a example config, webpanel example and dir for
+received logs. Just write:
+
+omnilogd skeleton
+
+</p>
 
 <h3>Use it</h3>
 <p>
