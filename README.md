@@ -27,7 +27,7 @@ The other components are all subcomponents , and some wrappers around third part
 <ul>
     <li>See remote logs via SSH.</li>
     <li>Main SSH auth methods.</li>
-    <li>Store logs in local folder for further analisys.</li>
+    <li>Store logs in local folder for further analysis.</li>
     <li>Auto reload config when it changes.</li>
     <li>Built-in HTTP server for showing results.</li>
 </ul>
