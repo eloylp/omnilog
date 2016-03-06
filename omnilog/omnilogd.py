@@ -156,7 +156,7 @@ class OmniLogD(object):
         elif com.action == IPCActions.ACTION_SHUTDOWN:
             self.shutdown()
 
-    def restart(self):
+    def restart(self, sig_num=None, frame=None):
 
         """
         The restart operation. It send the event to stop gracefully stop all threads, waits for
@@ -174,7 +174,7 @@ class OmniLogD(object):
         self.logs_runner.set()
         self.booting = True
 
-    def shutdown(self):
+    def shutdown(self, sig_num=None, frame=None):
         """
         The shutdown operation. Same procedure as restart, but this time the main loop will not do more
         review and exit.

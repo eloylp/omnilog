@@ -53,6 +53,7 @@ class HTTPServer(threading.Thread):
             address = (self.config['listenAddress'], self.config['listenPort'])
             self.request_handler.routes = self.routes
             httpd = Server.HTTPServer(address, self.request_handler)
+            httpd.timeout = 2
             while self.runner.is_set():
                 httpd.handle_request()
         except KeyError:

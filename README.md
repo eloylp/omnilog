@@ -23,16 +23,23 @@ that launches, controls and communicate the second layer, the app runnable sub c
 <p>
 The other components are all subcomponents , and some wrappers around third party libraries .
 </p>
-
+<h3>Key features</h3>
+<ul>
+    <li>See remote logs via SSH.</li>
+    <li>Main SSH auth methods.</li>
+    <li>Store logs in local folder for further analisys.</li>
+    <li>Auto reload config when it changes.</li>
+    <li>Built-in HTTP server for showing results.</li>
+</ul>
 <h3>Installation</h3>
 <p>
 From pypi install as:
- pip install omnilog
+pip3 install omnilog
 </p>
 
 <h3>Use it</h3>
 <p>
-omnilogd condig.json
+omnilogd config.json
 </p>
 <p>
 Where config.json is the route to your configuration file. You can get an example of this in docs/config.dist.json.

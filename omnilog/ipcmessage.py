@@ -40,6 +40,6 @@ class IPCMessage(object):
         lm = []
         str = "{key} - {value}"
         for k, v in self.__dict__.items():
-            lm.append(str.format(key=k, value=v))
+            lm.append(str.format(key=k[1:], value=v))
 
         return ' | '.join(lm)
