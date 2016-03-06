@@ -1,40 +1,81 @@
+/*
+ALWAYS use absolute paths in config.
+*/
+
 {
   "webPanel": {
+    /* Webpanel allow us to span up an HTTP SERVER to see log entries received */
     "active": true,
-    "dataOutput": "public/data_source",
+    "dataOutput": "/public/data_source",
+    /* Where the json archive (consumed by webpanel) is saved, must be inside docRoot*/
     "maxEntries": 50,
+    /* Max log entries to keep published in webpanel, (FIFO)*/
     "frontEndConfig": {
       "refreshIntervalSecs": 5
+      /* Interval in seconds where frontend may consume the dataOutput*/
     },
     "webServer": {
       "listenAddress": "127.0.0.1",
       "listenPort": 8080,
-      "docRoot": "public"
+      "docRoot": "/public"
     }
   },
   "generalHandler": {
-    "logsPath": "logs"
+    "logsPath": "/local/path/to/logs/dir"
+    /* Where to save a copy, (MUST BE A DIR, IT WILL CREATE A FILE FOR EACH LOG) */
   },
   "logs": [
+    /* One json block per log */
     {
       "active": true,
-      "name": "Super log",
+      "name": "Most simple log with public key ssh auth",
       "systemNotifications": true,
-      "logReadPath": "/path/to/log.log",
+      "logReadPath": "/path/to/log/in/remote/machine.log",
+      "ssh": {
+        /* SSH CONFIG FOR USE WITH PUBLIC KEY AUTH ----> MOSTLY RECOMMENDED <-----*/
+        "hostname": "hostname.com",
+        "port": 22,
+        "username": "user"
+      }
+    },
+    {
+      "active": true,
+      /* you can set this to false to skip this log config */
+      "name": "Most complex log with private key encripted ssh auth",
+      /* name for your log , MUST BE unique */
+      "systemNotifications": true,
+      /* ¿ do you want system notificactions popup? */
+      "logReadPath": "/path/to/log/in/remote/machine.log",
+      /* remote path where log is.*/
       "ignorePatterns": [],
+      /* patterns to ignore (you can omit this key) prevaleces over "patterns key" */
       "patterns": [
         "asda123",
         "^([a-z])+$"
+        /* patterns to match. if set, only matched log lines will appear (key is optional)  */
       ],
       "ssh": {
+        /* SSH CONFIG FOR USE WITH ENCRYPTED PRIVATE KEY  */
         "hostname": "hostname.com",
         "port": 22,
         "username": "user",
-        "password": "",
         "privateKey": {
           "path": "",
           "passphrase": ""
         }
+      }
+    },
+    {
+      "active": true,
+      "name": "Most simple log with ssh password auth.",
+      "systemNotifications": true,
+      "logReadPath": "/path/to/log/in/remote/machine.log",
+      "ssh": {
+        /* SSH CONFIG FOR USE WITH PASSWORD AUTH*/
+        "hostname": "hostname.com",
+        "port": 22,
+        "username": "user",
+        "password": ""
       }
     }
   ]

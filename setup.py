@@ -5,6 +5,7 @@ from setuptools import setup
 from setuptools.command.test import test as TestCommand
 import omnilog
 import sys
+import re
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +22,9 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 with open(here + '/README.md') as r:
-    readme = r.read()
+    readme_html = r.read()
+    readme_plain = re.sub(r"<([0-9a-zA-Z/]*)>", "", readme_html)
+
 with open(here + '/requirements.txt') as req:
     reqs = req.read().splitlines()
 
@@ -29,7 +32,7 @@ with open(here + '/requirements.txt') as req:
 setup(
     name='omnilog',
     version=omnilog.__version__,
-    download_url='https://github.com/sandboxwebs/omnilog/' + omnilog.__version__,
+    download_url='https://github.com/sandboxwebs/omnilog/tarball/' + omnilog.__version__,
     url='https://github.com/sandboxwebs/omnilog',
     license='GPLV3',
     author='Eloy (sbw)',
@@ -37,8 +40,8 @@ setup(
     cmdclass={'test': PyTest},
     tests_require=['pytest'],
     author_email='eloy@sandboxwebs.com',
-    description='A daemon remote log watcher that uses ssh, and multithreaded design.',
-    long_description=readme,
+    description='A remote log watcher daemon that uses ssh, and multithreaded design.',
+    long_description=readme_plain,
     packages=['omnilog'],
     # include_package_data=True,
     platforms='any',

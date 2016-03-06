@@ -4,15 +4,15 @@
 <p>
 It was conceived with the idea on mind that not all IT infraestructures
 or applications have a well defined and centralized logging system. This cant be a 
-  reason to not "listen" a those remote logs on that servers. Log reviews can be very 
-   painfull if you dont have a tool like this on your toolbelt.
+reason to not "listen" a those remote logs on that servers. Log reviews can be very 
+painfull if you dont have a tool like this on your toolbelt.
 </p>
 
 <p>
 With this application we can 'ssh in' all our servers simultaneously , get
 each line of those logs of interest and write it on local files, show 
- them on a html fashion through its integrated HTTP server or launch notification events when one log entry arrives
- from servers. 
+them on a html fashion through its integrated HTTP server or launch notification events when one log entry arrives
+from servers. 
 </p> 
 
 <h3>Architecture</h3>
@@ -21,14 +21,14 @@ Broadly speaking we can think that this application have 2 layers. One of them i
 that launches, controls and communicate the second layer, the app runnable sub components (threading involved).
 </p>
 <p>
-The other components are all subcomponents , and some wrappers around third party libraries .
+The other components are wrappers around third party libraries .
 </p>
 <h3>Key features</h3>
 <ul>
     <li>See remote logs via SSH.</li>
     <li>Main SSH auth methods.</li>
     <li>Store logs in local folder for further analysis.</li>
-    <li>Auto reload config when it changes.</li>
+    <li>Auto reload config when it changes.(No manual service restart needed)</li>
     <li>Built-in HTTP server for showing results.</li>
 </ul>
 <h3>Installation</h3>
