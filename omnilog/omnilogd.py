@@ -16,7 +16,7 @@ from omnilog.ipcactions import IPCActions
 from omnilog.ipcmessage import IPCMessage
 from omnilog.config import Config
 from omnilog.parser import LogParser
-from omnilog.handler import GeneralLogHandler
+from omnilog.handler import LogHandler
 from omnilog.cwatcher import ConfigWatcher
 from omnilog.wpanel import WebPanel
 from omnilog.logger import Logger
@@ -132,9 +132,9 @@ class OmniLogD(object):
                 if self.vertical_queue.empty() and self.booting:
 
                     if self.gen_log_handler_runner.is_set():
-                        gen_log_handler = GeneralLogHandler(Config.config_dict, self.log_queue,
-                                                            self.gen_log_handler_runner, self.web_panel_queue,
-                                                            self.vertical_queue)
+                        gen_log_handler = LogHandler(Config.config_dict, self.log_queue,
+                                                     self.gen_log_handler_runner, self.web_panel_queue,
+                                                     self.vertical_queue)
                         threads.append(gen_log_handler)
                         gen_log_handler.start()
 

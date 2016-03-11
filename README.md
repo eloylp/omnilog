@@ -33,6 +33,10 @@ The other components are wrappers around third party libraries .
 </ul>
 <h3>Installation</h3>
 <p>
+If you have problems with dbus module, install it with:
+apt-get install python3-dbus
+</p>
+<p>
 From pypi install as:
 pip3 install omnilog
 </p>
@@ -40,13 +44,13 @@ pip3 install omnilog
 You can create a skeleton , omnilog will write in your $HOME dir a example config, webpanel example and dir for
 received logs. Just write:
 
-omnilogd skeleton
+omnilogd.py skeleton
 
 </p>
 
 <h3>Use it</h3>
 <p>
-omnilogd config.json
+omnilogd.py config.json
 </p>
 <p>
 Where config.json is the route to your configuration file. You can get an example of this in docs/config.dist.json.

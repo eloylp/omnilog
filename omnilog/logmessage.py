@@ -39,7 +39,7 @@ class LogMessage(object):
 
     @property
     def system_notifications(self):
-        return self._name
+        return self._system_notifications
 
     @system_notifications.setter
     def system_notifications(self, system_notifications):

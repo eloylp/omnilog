@@ -11,7 +11,7 @@ from omnilog.notifier import Notifier
 from omnilog.logger import Logger
 
 
-class GeneralLogHandler(threading.Thread):
+class LogHandler(threading.Thread):
     """
     This subsystem receives all log messages that need to be saved or notified.
     Its the consumer of the logs queue and the producer of the webpanel queue.
@@ -41,7 +41,7 @@ class GeneralLogHandler(threading.Thread):
                 log_message = self.log_queue.get(False)
                 log_path = self.calc_log_path(log_message)
                 self.write_log(log_message, log_path)
-                if log_message.system_notifications:
+                if log_message.system_notifications is True:
                     self.notify_sys(log_message)
                 if self.web_panel_active:
                     self.send_to_webpanel(log_message)
