@@ -22,12 +22,16 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
-with open(here + '/README.md') as r:
-    readme_html = r.read()
-    readme_plain = re.sub(r"<([0-9a-zA-Z/]*)>", "", readme_html)
+try:
+    with open(here + '/README.md') as r:
+        readme_html = r.read()
+        readme_plain = re.sub(r"<([0-9a-zA-Z/]*)>", "", readme_html)
 
-with open(here + '/requirements.txt') as req:
-    reqs = req.read().splitlines()
+    with open(here + '/requirements.txt') as req:
+        reqs = req.read().splitlines()
+except:
+    reqs = []
+    readme_plain = ''
 
 setup(
     name='omnilog',
